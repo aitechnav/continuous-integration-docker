@@ -1,6 +1,6 @@
 # Example repo to run a web application using Docker and push to image registry with Github Action CI pipeline
 
-*** Please star this repository ***
+**Please star this repository **
 
 1. Clone the repo
 
