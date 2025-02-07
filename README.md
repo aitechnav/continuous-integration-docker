@@ -1,5 +1,5 @@
-# Example repo to run a web application using Docker and push to image registry with Github Action CI pipeline
-
+# CI pipeline with Github-actions
+<!-- 
 **Please star this repository **
 
 1. Clone the repo
@@ -49,3 +49,4 @@ docker pull ghcr.io/<your-github-username>/flask-webserver:latest
 
 docker run -p 5000:5000 ghcr.io/<your-github-username>/flask-webserver:latest
 ```
+-->
