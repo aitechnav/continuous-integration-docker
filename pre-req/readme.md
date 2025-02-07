@@ -13,5 +13,4 @@
 $ git config --global user.name <github-user>
 $ git config --global user.email <github-email>
 ```
-5. Sign-up for AWS account 
-[Sign-Up] (https://portal.aws.amazon.com/gp/aws/developer/registration/index.html?refid=em_127222&p=free&c=hp&z=1)
+5. [signup for aws account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html?refid=em_127222&p=free&c=hp&z=1)
