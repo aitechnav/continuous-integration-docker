@@ -14,3 +14,8 @@ $ git config --global user.name <github-user>
 $ git config --global user.email <github-email>
 ```
 5. [Signup for AWS account](https://portal.aws.amazon.com/gp/aws/developer/registration/index.html?refid=em_127222&p=free&c=hp&z=1)
+
+
+<a href="https://docs.docker.com/get-started/get-docker/?_gl=1*10bqzv8*_gcl_au*MTU1NTAxMjQxMi4xNzM2MTQwNDU3*_ga*MjExMjMxNzYwOS4xNzM2MTQwNDU3*_ga_XJWPQMJYHQ*MTczODkzNDQ3NC4zLjEuMTczODkzNDUwNi4yOC4wLjA." target="_blank">Download here</a>
+
+<a href="https://portal.aws.amazon.com/gp/aws/developer/registration/index.html?refid=em_127222&p=free&c=hp&z=1" target="_blank">Signup for AWS</a>
