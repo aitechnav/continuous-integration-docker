@@ -2,7 +2,8 @@
 
 1. Sign up for Github account https://github.com/
 
-2. Install Docker on laptop [Download here] (https://docs.docker.com/get-started/get-docker/?_gl=1*10bqzv8*_gcl_au*MTU1NTAxMjQxMi4xNzM2MTQwNDU3*_ga*MjExMjMxNzYwOS4xNzM2MTQwNDU3*_ga_XJWPQMJYHQ*MTczODkzNDQ3NC4zLjEuMTczODkzNDUwNi4yOC4wLjA.)
+2. Install Docker on laptop [Download here](https://docs.docker.com/get-started/get-docker/?_gl=1*10bqzv8*_gcl_au*MTU1NTAxMjQxMi4xNzM2MTQwNDU3*_ga*MjExMjMxNzYwOS4xNzM2MTQwNDU3*_ga_XJWPQMJYHQ*MTczODkzNDQ3NC4zLjEuMTczODkzNDUwNi4yOC4wLjA.)
+
 
 
 3. ⁠Install git command line on laptop https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
