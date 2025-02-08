@@ -14,5 +14,5 @@ $ git config --global user.email <github-email>
 ```
 5. <a href="https://portal.aws.amazon.com/gp/aws/developer/registration/index.html?refid=em_127222&p=free&c=hp&z=1" target="_blank">Signup for AWS Account</a>
 
-6. Open this url https://github.com/aitechnav/continuous-integration-docker/  and click star and fork on the top right to confirm above steps completed.
+6. Open this url in new tab: https://github.com/aitechnav/continuous-integration-docker/  and click star and fork on the top right to confirm above steps completed.
 
