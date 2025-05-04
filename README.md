@@ -1,5 +1,7 @@
 # CI pipeline with Github-actions
-<!-- 
+
+This repository was created for the workshop and blog https://dev.to/sudo_anuj/automating-flask-app-deployment-with-docker-github-actions-8gh
+
 **Please star this repository **
 
 1. Clone the repo
