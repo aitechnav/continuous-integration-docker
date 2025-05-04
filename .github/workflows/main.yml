@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build, Test, and Release
 
 on:
   push:
@@ -6,26 +6,157 @@ on:
       - main  # Triggers only on the 'main' branch
 
 jobs:
-  build-and-push:
+  test:
+    name: Test Application
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Run tests
+        run: |
+          pytest -v
 
+  version-and-build:
+    name: Version, Build and Push
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for tag creation
+      packages: write  # Required for package publishing
+    
     steps:
       # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetches all history for all tags and branches
+      
+      # Determine the next version number
+      - name: Determine next version
+        id: next-version
+        run: |
+          # Get the latest version tag (or set to v0.00 if none exists)
+          LATEST_TAG=$(git tag -l 'v*' | sort -V | tail -n 1 || echo "v0.00")
+          echo "Latest tag: $LATEST_TAG"
+          
+          # Extract version number and increment minor version
+          VERSION_NUM=${LATEST_TAG#v}
+          MAJOR=$(echo $VERSION_NUM | cut -d. -f1)
+          MINOR=$(echo $VERSION_NUM | cut -d. -f2)
+          NEW_MINOR=$(printf "%02d" $((10#$MINOR + 1)))
+          NEW_VERSION="v$MAJOR.$NEW_MINOR"
+          
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version will be: $NEW_VERSION"
 
+      # Security scan for the code
+      - name: Run security scan
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+        continue-on-error: true  # Don't fail the build for security issues, but report them
+      
+      # Create and push the new tag
+      - name: Create and push tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a ${{ env.NEW_VERSION }} -m "Release ${{ env.NEW_VERSION }}"
+          git push origin ${{ env.NEW_VERSION }}
+          echo "Created and pushed tag: ${{ env.NEW_VERSION }}"
+
+      # Set up Docker Buildx for multi-platform builds
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
       # Log in to GitHub Container Registry (GHCR)
       - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      
+      # Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/flask-webserver:latest
+            ghcr.io/${{ github.repository_owner }}/flask-webserver:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/flask-webserver:${{ env.NEW_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      # Scan Docker image for vulnerabilities
+      - name: Scan Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/flask-webserver:${{ env.NEW_VERSION }}
+          format: 'table'
+          exit-code: '0'  # Don't fail pipeline but report issues
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
 
-      # Build the Docker image
-      - name: Build Docker Image
+  release:
+    name: Create Release
+    needs: version-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required for creating releases
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed to get all commits since last tag
+      
+      - name: Get previous tag
+        id: previoustag
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/flask-webserver:latest .
-          docker tag ghcr.io/${{ github.repository_owner }}/flask-webserver:latest ghcr.io/${{ github.repository_owner }}/flask-webserver:${{ github.sha }}
-
-      # Push the Docker image to GitHub Container Registry
-      - name: Push Docker Image
+          PREVIOUS_TAG=$(git tag -l 'v*' | sort -V | tail -n 2 | head -n 1 || echo "")
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
+      
+      - name: Generate changelog
+        id: changelog
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/flask-webserver:latest
-          docker push ghcr.io/${{ github.repository_owner }}/flask-webserver:${{ github.sha }}
+          if [ -n "${{ env.PREVIOUS_TAG }}" ]; then
+            echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+            git log ${{ env.PREVIOUS_TAG }}..HEAD --pretty=format:"* %s (%h) by %an" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          else
+            echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+            git log --pretty=format:"* %s (%h) by %an" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.version-and-build.outputs.new_version || env.NEW_VERSION }}
+          name: Release ${{ needs.version-and-build.outputs.new_version || env.NEW_VERSION }}
+          body: |
+            ## What's Changed
+            ${{ env.CHANGELOG }}
+            
+            ## Docker Image
+            `ghcr.io/${{ github.repository_owner }}/flask-webserver:${{ needs.version-and-build.outputs.new_version || env.NEW_VERSION }}`
+          draft: false
+          prerelease: false
